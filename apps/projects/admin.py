@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
-from .models import Project, Task
+from .models import Project, Column, Task
 
 
 @admin.register(Project)
@@ -15,10 +15,18 @@ class ProjectAdmin(admin.ModelAdmin):
     date_hierarchy = 'created_at'
 
 
+@admin.register(Column)
+class ColumnAdmin(admin.ModelAdmin):
+    list_display = ('title', 'project', 'created_at', 'updated_at')
+    list_filter = ('project',)
+    search_fields = ('title', 'project__title')
+    ordering = ('-created_at',)
+
+
 @admin.register(Task)
 class TaskAdmin(admin.ModelAdmin):
-    list_display = ('title', 'project', 'status', 'priority', 'due_date', 'is_completed')
-    list_filter = ('project', 'status', 'priority', 'is_completed')
+    list_display = ('title', 'project', 'column', 'status', 'priority', 'due_date', 'is_completed')
+    list_filter = ('project', 'column', 'status', 'priority', 'is_completed')
     search_fields = ('title', 'description')
     date_hierarchy = 'created_at'
     actions = ['archive_tasks', 'unarchive_tasks']

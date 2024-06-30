@@ -38,6 +38,21 @@ class Project(models.Model):
         return self.title
 
 
+class Column(models.Model):
+    title = models.CharField(max_length=255, unique=True, verbose_name=_("Title"))
+    project = models.ForeignKey(Project, related_name='columns', on_delete=models.CASCADE, verbose_name=_("Project"))
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Created At"))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=_("Updated At"))
+
+    class Meta:
+        verbose_name = _("Column")
+        verbose_name_plural = _("Columns")
+        ordering = ['created_at']
+
+    def __str__(self):
+        return self.title
+
+
 class TaskManager(models.Manager):
     def get_queryset(self):
         return super().get_queryset().filter(archived_at__isnull=True)
@@ -63,6 +78,8 @@ class Task(models.Model):
     updated_at = models.DateTimeField(_('Updated At'), auto_now=True)
     is_completed = models.BooleanField(_('Is Completed'), default=False)
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='tasks', verbose_name=_('Project'))
+    column = models.ForeignKey(Column, related_name='column_tasks', on_delete=models.SET_NULL, null=True,
+                               blank=True, verbose_name=_("Column"))
     status = models.CharField(_('Status'), max_length=20, choices=STATUS_CHOICES, default='new')
     priority = models.CharField(_('Priority'), max_length=10, choices=PRIORITY_CHOICES, default='medium')
     history = HistoricalRecords()

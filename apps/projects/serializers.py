@@ -1,35 +1,42 @@
 from rest_framework import serializers
-from .models import Project, Task
+from .models import Project, Column, Task
 
 
 class ProjectSerializer(serializers.ModelSerializer):
+    column_count = serializers.SerializerMethodField()
     tasks_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Project
-        fields = ('id', 'title', 'slug', 'tasks_count')
+        fields = ('id', 'title', 'slug', 'column_count', 'tasks_count')
+
+    def get_column_count(self, obj):
+        return obj.columns.count()
 
     def get_tasks_count(self, obj):
         return obj.tasks.count()
 
-    def get_extra_kwargs(self):
-        kwargs = super().get_extra_kwargs()
-        if 'request' in self.context:
-            kwargs['tasks_url'] = {
-                'view_name': 'project-tasks-list',
-                'lookup_url_kwarg': 'slug',
-                'lookup_field': 'slug',
-            }
-        return kwargs
+
+class ColumnSerializer(serializers.ModelSerializer):
+    project = ProjectSerializer()
+    tasks_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Column
+        fields = ['id', 'title', 'project', 'created_at', 'updated_at', 'tasks_count']
+
+    def get_tasks_count(self, obj):
+        return obj.column_tasks.count()
 
 
 class TaskSerializer(serializers.ModelSerializer):
     project = ProjectSerializer()
+    column = ColumnSerializer()
 
     class Meta:
         model = Task
         fields = ('id', 'title', 'description', 'due_date', 'created_at', 'updated_at',
-                  'is_completed', 'status', 'priority', 'archived_at', 'project')
+                  'is_completed', 'status', 'priority', 'archived_at', 'project', 'column')
 
     def create(self, validated_data):
         project_data = validated_data.pop('project')
