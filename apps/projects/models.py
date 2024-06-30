@@ -1,6 +1,9 @@
 from django.db import models
+from django.utils import timezone
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
+
+from simple_history.models import HistoricalRecords
 
 
 class ProjectManager(models.Manager):
@@ -33,3 +36,55 @@ class Project(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class TaskManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().filter(archived_at__isnull=True)
+
+
+class Task(models.Model):
+    STATUS_CHOICES = [
+        ('new', _('New')),
+        ('in_progress', _('In Progress')),
+        ('completed', _('Completed')),
+        ('archived', _('Archived')),
+    ]
+    PRIORITY_CHOICES = [
+        ('low', _('Low')),
+        ('medium', _('Medium')),
+        ('high', _('High')),
+    ]
+
+    title = models.CharField(_('Title'), max_length=200)
+    description = models.TextField(_('Description'), blank=True, null=True)
+    due_date = models.DateField(_('Due Date'), blank=True, null=True)
+    created_at = models.DateTimeField(_('Created At'), auto_now_add=True)
+    updated_at = models.DateTimeField(_('Updated At'), auto_now=True)
+    is_completed = models.BooleanField(_('Is Completed'), default=False)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='tasks', verbose_name=_('Project'))
+    status = models.CharField(_('Status'), max_length=20, choices=STATUS_CHOICES, default='new')
+    priority = models.CharField(_('Priority'), max_length=10, choices=PRIORITY_CHOICES, default='medium')
+    history = HistoricalRecords()
+
+    archived_at = models.DateTimeField(_('Archived At'), blank=True, null=True)
+
+    objects = models.Manager()
+    active_tasks = TaskManager()
+
+    def archive(self):
+        self.status = 'archived'
+        self.archived_at = timezone.now()
+        self.save()
+
+    def unarchive(self):
+        self.status = 'new'
+        self.archived_at = None
+        self.save()
+
+    def __str__(self):
+        return self.title
+
+    class Meta:
+        verbose_name = _('Task')
+        verbose_name_plural = _('Tasks')

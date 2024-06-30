@@ -1,9 +1,22 @@
 from rest_framework import permissions, viewsets
 
-from .models import Project
-from .serializers import ProjectSerializer
+from .models import Project, Task
+from .serializers import ProjectSerializer, TaskSerializer
 
 
 class ProjectViewSet(viewsets.ModelViewSet):
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
+
+
+class TaskViewSet(viewsets.ModelViewSet):
+    serializer_class = TaskSerializer
+
+    def get_queryset(self):
+        project_slug = self.kwargs.get('project_slug')
+        return Task.objects.filter(project__slug=project_slug)
+
+    def perform_create(self, serializer):
+        project_slug = self.kwargs.get('project_slug')
+        project = Project.objects.get(slug=project_slug)
+        serializer.save(project=project)

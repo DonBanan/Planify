@@ -23,6 +23,8 @@ from apps.projects import views
 
 router = routers.DefaultRouter()
 router.register(r'projects', views.ProjectViewSet)
+router.register(r'projects/(?P<project_slug>[-\w]+)/tasks', views.TaskViewSet, basename='project-tasks')
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),

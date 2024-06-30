@@ -1,5 +1,8 @@
 from django.contrib import admin
-from .models import Project
+from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
+
+from .models import Project, Task
 
 
 @admin.register(Project)
@@ -10,3 +13,25 @@ class ProjectAdmin(admin.ModelAdmin):
     list_filter = ('is_deleted', 'created_at')
     ordering = ('-created_at',)
     date_hierarchy = 'created_at'
+
+
+@admin.register(Task)
+class TaskAdmin(admin.ModelAdmin):
+    list_display = ('title', 'project', 'status', 'priority', 'due_date', 'is_completed')
+    list_filter = ('project', 'status', 'priority', 'is_completed')
+    search_fields = ('title', 'description')
+    date_hierarchy = 'created_at'
+    actions = ['archive_tasks', 'unarchive_tasks']
+
+    def archive_tasks(self, request, queryset):
+        queryset.update(status='archived', archived_at=timezone.now())
+
+    def unarchive_tasks(self, request, queryset):
+        queryset.update(status='new', archived_at=None)
+
+    archive_tasks.short_description = _("Archive selected tasks")
+    unarchive_tasks.short_description = _("Unarchive selected tasks")
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        return qs.filter(archived_at__isnull=True)
